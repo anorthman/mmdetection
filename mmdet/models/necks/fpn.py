@@ -47,6 +47,7 @@ class FPN(nn.Module):
                 in_channels[i],
                 out_channels,
                 1,
+                padding=0,	
                 normalize=normalize,
                 bias=self.with_bias,
                 activation=self.activation,
@@ -54,8 +55,8 @@ class FPN(nn.Module):
             fpn_conv = ConvModule(
                 out_channels,
                 out_channels,
-                3,
-                padding=1,
+                1,
+                padding=0,
                 normalize=normalize,
                 bias=self.with_bias,
                 activation=self.activation,
