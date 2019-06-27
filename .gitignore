@@ -53,6 +53,7 @@ coverage.xml
 
 # Django stuff:
 *.log
+
 local_settings.py
 db.sqlite3
 
@@ -109,3 +110,6 @@ mmdet/version.py
 data
 .vscode
 .idea
+
+##
+work_dirs
