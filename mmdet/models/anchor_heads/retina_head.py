@@ -38,16 +38,16 @@ class RetinaHead(AnchorHead):
         for i in range(self.stacked_convs):
             chn = self.in_channels if i == 0 else self.feat_channels
             self.cls_convs.append(
-                nn.Conv2d(chn, self.feat_channels, 3, stride=1, padding=1))
+                nn.Conv2d(chn, self.feat_channels, 3, stride=1, padding=1, groups=self.feat_channels))
             self.reg_convs.append(
-                nn.Conv2d(chn, self.feat_channels, 3, stride=1, padding=1))
+                nn.Conv2d(chn, self.feat_channels, 3, stride=1, padding=1, groups=self.feat_channels))
         self.retina_cls = nn.Conv2d(
             self.feat_channels,
             self.num_anchors * self.cls_out_channels,
-            3,
-            padding=1)
+            1,
+            padding=0)
         self.retina_reg = nn.Conv2d(
-            self.feat_channels, self.num_anchors * 4, 3, padding=1)
+            self.feat_channels, self.num_anchors * 4, 1, padding=0)
 
     def init_weights(self):
         for m in self.cls_convs:
