@@ -16,6 +16,9 @@ class RetinaHead(AnchorHead):
                  stacked_convs=4,
                  octave_base_scale=4,
                  scales_per_octave=3,
+				 kernel_size=3,
+				 padding=1,
+				 group=1,
                  **kwargs):
         self.stacked_convs = stacked_convs
         self.octave_base_scale = octave_base_scale
@@ -23,6 +26,9 @@ class RetinaHead(AnchorHead):
         octave_scales = np.array(
             [2**(i / scales_per_octave) for i in range(scales_per_octave)])
         anchor_scales = octave_scales * octave_base_scale
+        self.kernel = kernel_size
+        self.pad = padding
+        self.group = group
         super(RetinaHead, self).__init__(
             num_classes,
             in_channels,
@@ -38,16 +44,16 @@ class RetinaHead(AnchorHead):
         for i in range(self.stacked_convs):
             chn = self.in_channels if i == 0 else self.feat_channels
             self.cls_convs.append(
-                nn.Conv2d(chn, self.feat_channels, 3, stride=1, padding=1, groups=self.feat_channels))
+                nn.Conv2d(chn, self.feat_channels, self.kernel, stride=1, padding=self.pad, groups=self.group))
             self.reg_convs.append(
-                nn.Conv2d(chn, self.feat_channels, 3, stride=1, padding=1, groups=self.feat_channels))
+                nn.Conv2d(chn, self.feat_channels, self.kernel, stride=1, padding=self.pad, groups=self.group))
         self.retina_cls = nn.Conv2d(
             self.feat_channels,
             self.num_anchors * self.cls_out_channels,
-            1,
-            padding=0)
+            3,
+            padding=1)
         self.retina_reg = nn.Conv2d(
-            self.feat_channels, self.num_anchors * 4, 1, padding=0)
+            self.feat_channels, self.num_anchors * 4, 3, padding=1)
 
     def init_weights(self):
         for m in self.cls_convs:

@@ -17,7 +17,9 @@ class FPN(nn.Module):
                  end_level=-1,
                  add_extra_convs=False,
                  normalize=None,
-                 activation=None):
+                 activation=None,
+                 kernel_size=3,
+                 padding=1):
         super(FPN, self).__init__()
         assert isinstance(in_channels, list)
         self.in_channels = in_channels
@@ -46,8 +48,8 @@ class FPN(nn.Module):
             l_conv = ConvModule(
                 in_channels[i],
                 out_channels,
-                1,
-                padding=0,	
+                kernel_size,
+                padding=padding,	
                 normalize=normalize,
                 bias=self.with_bias,
                 activation=self.activation,
@@ -55,8 +57,8 @@ class FPN(nn.Module):
             fpn_conv = ConvModule(
                 out_channels,
                 out_channels,
-                1,
-                padding=0,
+                kernel_size,
+                padding=padding,
                 normalize=normalize,
                 bias=self.with_bias,
                 activation=self.activation,
