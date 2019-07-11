@@ -64,6 +64,101 @@ def weighted_sigmoid_focal_loss(pred,
         pred, target, weight, gamma=gamma, alpha=alpha,
         reduction='sum')[None] / avg_factor
 
+def sigmoid_kldiv_focal_loss(pred,
+                            target,
+                            weight,
+                            temperature=4.,
+                            gamma=2.0,
+                            alpha=0.25,
+                            reduction='mean'):
+    '''
+    sigmoid KLDiv focal loss (added by huangchuanhong)
+    '''
+    def kldiv(p, q, temperature):
+        kl = (q * ((q + 1e-10).log() - (p + 1e-10).log()) + (1 - q) * ((1 - q + 1e-10).log() - (1 - p + 1e-10).log())) * (temperature ** 2)
+        return kl
+    pred_t_sigmoid = F.sigmoid(pred / temperature)
+    target_t_sigmoid = F.sigmoid(target / temperature)
+    kl = kldiv(pred_t_sigmoid, target_t_sigmoid, temperature)
+    pt = (1 - pred_t_sigmoid) * target_t_sigmoid + pred_t_sigmoid * (1 - target_t_sigmoid)
+    weight = (alpha * target_t_sigmoid + (1 - alpha) * (1 - target_t_sigmoid)) * weight
+    weight = weight * pt.pow(gamma)
+    loss = kl * weight
+    reduction_enum = F._Reduction.get_enum(reduction)
+    # none: 0, mean:1, sum: 2
+    if reduction_enum == 0:
+        return loss
+    elif reduction_enum == 1:
+        return loss.mean()
+    elif reduction_enum == 2:
+        return loss.sum()
+    return loss
+
+def weighted_sigmoid_kldiv_focal_loss(pred,
+                                      target,
+                                      weight,
+                                      temperature=4.,
+                                      gamma=2.0,
+                                      alpha=0.25,
+                                      teacher_alpha=1,
+                                      avg_factor=None,
+                                      num_classes=80):
+    '''
+    For a KD loss, weighted as focal loss(added by huangchuanhong)
+    :param target: the teacher pred
+    '''
+    if teacher_alpha == 0.:
+        return torch.zeros([]).cuda()
+    if avg_factor is None:
+        avg_factor = torch.sum(weight > 0).float().item() / num_classes + 1e-6
+    return sigmoid_kldiv_focal_loss(
+        pred, target, weight, temperature=temperature, gamma=gamma, alpha=alpha,
+        reduction='sum')[None] / avg_factor * teacher_alpha
+
+def sigmoid_kldiv(pred,
+                  target,
+                  weight,
+                  temperature=4.,
+                  reduction='mean'):
+    '''
+    sigmoid KLDiv loss (added by huangchuanhong)
+    '''
+    def kldiv(p, q, temperature):
+        kl = (q * ((q + 1e-10).log() - (p + 1e-10).log()) + (1 - q) * ((1 - q + 1e-10).log() - (1 - p + 1e-10).log())) * (temperature ** 2)
+        return kl
+    pred_t_sigmoid = F.sigmoid(pred / temperature)
+    target_t_sigmoid = F.sigmoid(target / temperature)
+    kl = kldiv(pred_t_sigmoid, target_t_sigmoid, temperature)
+    loss = kl * weight
+    reduction_enum = F._Reduction.get_enum(reduction)
+    # none: 0, mean:1, sum: 2
+    if reduction_enum == 0:
+        return loss
+    elif reduction_enum == 1:
+        return loss.mean()
+    elif reduction_enum == 2:
+        return loss.sum()
+    return loss
+
+def weighted_sigmoid_kldiv(pred,
+                           target,
+                           weight,
+                           temperature=4,
+                           teacher_alpha=1,
+                           avg_factor=None,
+                           num_classes=80):
+    '''
+        For a KD loss(added by huangchuanhong)
+        :param target: the teacher pred
+        '''
+    if teacher_alpha == 0.:
+        return torch.zeros([]).cuda()
+    if avg_factor is None:
+        avg_factor = torch.sum(weight > 0).float().item() / num_classes + 1e-6
+    return sigmoid_kldiv(
+        pred, target, weight, temperature=temperature,
+        reduction='sum')[None] / avg_factor * teacher_alpha
+
 
 def mask_cross_entropy(pred, target, label):
     num_rois = pred.size()[0]
@@ -113,3 +208,37 @@ def accuracy(pred, target, topk=1):
         correct_k = correct[:k].view(-1).float().sum(0, keepdim=True)
         res.append(correct_k.mul_(100.0 / pred.size(0)))
     return res[0] if return_single else res
+
+#def attention_loss(xs, ys, beta):
+#    '''
+#    added by huangchuanhong
+#    '''
+#    def at(x):
+#        return F.normalize(x.pow(2).mean(1).view(x.size(0), -1))
+#    def at_loss(x, y):
+#        return (at(x) - at(y)).pow(2).mean()
+#    return sum([at_loss(x, y) for x, y in zip(xs, ys)]) * beta
+
+#def attention_loss(x, y, beta):
+#    '''
+#    added by huangchuanhong
+#    '''
+#    if beta == 0.:
+#        return torch.zeros([]).cuda(),
+#    def at(x):
+#        return F.normalize(x.pow(2).mean(1).view(x.size(0), -1))
+#    def at_loss(x, y):
+#        return (at(x) - at(y)).pow(2).mean()
+#    return at_loss(x, y) * beta, 
+
+def attention_loss(x, y, beta):
+    '''
+    added by huangchuanhong
+    '''
+    if beta == 0.:
+        return torch.zeros([]).cuda(),
+    def at(x):
+        return F.normalize(x.pow(2).mean(1).view(x.size(0), -1))
+    def at_loss(x, y):
+        return (at(x) - at(y)).pow(2).sum()
+    return at_loss(x, y) * beta * 0.5,
