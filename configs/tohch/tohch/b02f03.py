@@ -47,7 +47,7 @@ model = dict(
         target_means=[.0, .0, .0, .0],
         target_stds=[1.0, 1.0, 1.0, 1.0]),
     teacher=dict(
-        checkpoint='work_dirs/tohch/zy4/epoch_90.pth',
+        checkpoint='work_dirs/face/512x4/epoch_90.pth',
         model = dict(
             type='RetinaNet',
             pretrained=None,#'modelzoo://resnet50',
@@ -69,7 +69,7 @@ model = dict(
                 strides=(2,2,2),
                 #kernel_size=[3],
                 dilations=[1,1,1],
-                    group=[1,4,1,4,1,4,1,1,8,1,8,1,8,1,1,16,1,16,1,16,1],
+                group=[1,4,1,4,1,4,1,1,8,1,8,1,8,1,1,16,1,16,1,16,1],
                 kernel_size=[3,3,1,3,1,3,1]*3,
                 num_stages=3,
                 out_indices=(0, 1, 2),
@@ -111,12 +111,12 @@ train_cfg = dict(
     debug=False,
     focal_loss=True,
     teacher=dict(
-        backbone_at=False,
+        backbone_at=True,
         backbone_at_idxes=[0,1,2],
-        neck_at=True,
+        neck_at=False,
         alpha=0,
         kd_with_focal=True,
-        beta=0.2,
+        beta=0.1,
         temperature=4))
 test_cfg = dict(
     nms_pre=1000,
@@ -132,7 +132,7 @@ img_norm_cfg = dict(
     #mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
 data = dict(
     imgs_per_gpu=16,
-    workers_per_gpu=16,
+    workers_per_gpu=8,
     train=dict(
         type=dataset_type,
         ann_file=data_root + 'newlibraf_info/train_minignore.pkl',
@@ -179,7 +179,7 @@ data = dict(
         with_label=False,
         test_mode=True))
 # optimizer
-optimizer = dict(type='SGD', lr=0.02, momentum=0.9, weight_decay=0.0001)
+optimizer = dict(type='SGD', lr=0.002, momentum=0.9, weight_decay=0.0001)
 optimizer_config = dict(grad_clip=dict(max_norm=35, norm_type=2))
 # learning policy
 lr_config = dict(
@@ -190,7 +190,7 @@ lr_config = dict(
 checkpoint_config = dict(interval=1)
 # yapf:disable
 log_config = dict(
-    interval=50,
+    interval=10,
     hooks=[
         dict(type='TextLoggerHook'),
         # dict(type='TensorboardLoggerHook')
@@ -202,6 +202,6 @@ device_ids = range(8)
 dist_params = dict(backend='nccl')
 log_level = 'INFO'
 work_dir = './work_dirs/tohch/b0f03t4'
-load_from = None
+load_from = 'work_dirs/face/512_nie_baseconv/epoch_200.pth'#None
 resume_from = None
 workflow = [('train', 1)]
