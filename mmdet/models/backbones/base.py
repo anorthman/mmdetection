@@ -33,7 +33,10 @@ class BaseConv(nn.Module):
         self.conv1 = nn.Conv2d(inplanes, planes, kernel_size=self.kernel_size,stride=self.stride, 
                         padding=self.padding,groups=self.group,bias=False)
         self.bn1 = nn.BatchNorm2d(planes)
-        self.activate = activate(inplace=True)
+        if activate == nn.PReLU:
+            self.activate = activate(planes)
+        else:	
+            self.activate = activate(inplace=True)
 
     def forward(self, x):
 
