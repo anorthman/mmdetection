@@ -75,8 +75,8 @@ img_norm_cfg = dict(
     mean=[123.675, 116.28, 103.53], std=[256, 256, 256], to_rgb=True)
     #mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
 data = dict(
-    imgs_per_gpu=128,
-    workers_per_gpu=16,
+    imgs_per_gpu=64,
+    workers_per_gpu=4,
     train=dict(
         type=dataset_type,
         ann_file="data/newlibraf_info/train_normal.pkl",
@@ -94,7 +94,7 @@ data = dict(
                     saturation_range=(0.5, 1.5),
                     hue_delta=18),
                 random_crop=dict(
-                    min_ious=(0.3, 0.5, 0.7, 0.9), min_crop_size=0.6,keep_ratio=True),
+                    min_ious=(0.3, 0.5, 0.7, 0.9), min_crop_size=0.6,keep_ratio=True)),
         resize_keep_ratio=True,
         with_label=True),
     val=dict(
@@ -113,8 +113,7 @@ data = dict(
         #ann_file="./data/qa/test.pkl",#data/newlibraf_info/test_normal.pkl",
         ann_file="data/newlibraf_info/test_normal.pkl",
     	img_prefix='./data/',
-        img_scale=(512, 512),
-        resize_keep_ratio=False,
+        img_scale=(1300, 576),
         img_norm_cfg=img_norm_cfg,
         size_divisor=32,
         flip_ratio=0,
@@ -123,25 +122,25 @@ data = dict(
         with_label=False,
         test_mode=True))
 # optimizer
-optimizer = dict(type='SGD', lr=0.02, momentum=0.9, weight_decay=0.0001)
+optimizer = dict(type='SGD', lr=0.12, momentum=0.9, weight_decay=0.0001)
 optimizer_config = dict(grad_clip=dict(max_norm=35, norm_type=2))
 # learning policy
 lr_config = dict(
     policy='cosine',
     warmup='linear',
     warmup_iters=2000,
-    warmup_ratio=1.0 / 3)
-checkpoint_config = dict(interval=1)
+    warmup_ratio=1.0 / 30)
+checkpoint_config = dict(interval=5)
 # yapf:disable
 log_config = dict(
-    interval=50,
+    interval=10,
     hooks=[
         dict(type='TextLoggerHook'),
         # dict(type='TensorboardLoggerHook')
     ])
 # yapf:enable
 # runtime settings
-total_epochs = 250
+total_epochs = 200
 device_ids = range(8)
 dist_params = dict(backend='nccl')
 log_level = 'INFO'

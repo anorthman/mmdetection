@@ -109,7 +109,7 @@ class RandomCrop(object):
             min_iou = mode
             for i in range(50):
                 new_w = random.uniform(self.min_crop_size * w, w)
-		if self.keep == True:
+                if self.keep == True:
                     new_h = new_w/w*h
                 else:
                     new_h = random.uniform(self.min_crop_size * h, h)
