@@ -126,14 +126,16 @@ class AnchorHead(nn.Module):
         return anchor_list, valid_flag_list
 
     def loss_single(self, cls_score, bbox_pred, labels, label_weights,
-                    bbox_targets, bbox_weights, num_total_samples, cfg):
+                    bbox_targets, bbox_weights, mix_inds, num_total_samples, cfg):
         # classification loss
         if self.use_sigmoid_cls:
             labels = labels.reshape(-1, self.cls_out_channels)
             label_weights = label_weights.reshape(-1, self.cls_out_channels)
+            mix_inds = mix_inds.reshape(-1, self.cls_out_channels)
         else:
             labels = labels.reshape(-1)
             label_weights = label_weights.reshape(-1)
+            mix_inds = mix_inds.reshape(-1)
         cls_score = cls_score.permute(0, 2, 3, 1).reshape(
             -1, self.cls_out_channels)
         if self.use_sigmoid_cls:
@@ -151,12 +153,13 @@ class AnchorHead(nn.Module):
                 cls_score,
                 labels,
                 label_weights,
+                # mix_inds=mix_inds,
                 gamma=cfg.gamma,
                 alpha=cfg.alpha,
                 avg_factor=num_total_samples)
         else:
             loss_cls = cls_criterion(
-                cls_score, labels, label_weights, avg_factor=num_total_samples)
+                cls_score, labels, label_weights, mix_inds=mix_inds, avg_factor=num_total_samples)
         # regression loss
         bbox_targets = bbox_targets.reshape(-1, 4)
         bbox_weights = bbox_weights.reshape(-1, 4)
@@ -165,6 +168,7 @@ class AnchorHead(nn.Module):
             bbox_pred,
             bbox_targets,
             bbox_weights,
+            mix_inds=mix_inds,
             beta=cfg.smoothl1_beta,
             avg_factor=num_total_samples)
         return loss_cls, loss_reg
@@ -176,7 +180,9 @@ class AnchorHead(nn.Module):
              gt_labels,
              img_metas,
              cfg,
-             gt_bboxes_ignore=None):
+             gt_bboxes_ignore=None,
+             mix_weight=None
+             ):
         featmap_sizes = [featmap.size()[-2:] for featmap in cls_scores]
         assert len(featmap_sizes) == len(self.anchor_generators)
 
@@ -195,11 +201,13 @@ class AnchorHead(nn.Module):
             gt_bboxes_ignore_list=gt_bboxes_ignore,
             gt_labels_list=gt_labels,
             label_channels=label_channels,
-            sampling=sampling)
+            sampling=sampling,
+            mix_weight=mix_weight
+        )
         if cls_reg_targets is None:
             return None
         (labels_list, label_weights_list, bbox_targets_list, bbox_weights_list,
-         num_total_pos, num_total_neg) = cls_reg_targets
+         num_total_pos, num_total_neg, mix_inds_list) = cls_reg_targets
         num_total_samples = (num_total_pos if self.use_focal_loss else
                              num_total_pos + num_total_neg)
         losses_cls, losses_reg = multi_apply(
@@ -210,6 +218,7 @@ class AnchorHead(nn.Module):
             label_weights_list,
             bbox_targets_list,
             bbox_weights_list,
+            mix_inds_list,
             num_total_samples=num_total_samples,
             cfg=cfg)
         return dict(loss_cls=losses_cls, loss_reg=losses_reg)

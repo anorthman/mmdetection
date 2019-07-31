@@ -107,9 +107,11 @@ class SSDHead(AnchorHead):
         return cls_scores, bbox_preds
 
     def loss_single(self, cls_score, bbox_pred, labels, label_weights,
-                    bbox_targets, bbox_weights, num_total_samples, cfg):
+                    bbox_targets, bbox_weights, mix_inds, num_total_samples, cfg):
         loss_cls_all = F.cross_entropy(
             cls_score, labels, reduction='none') * label_weights
+        loss_cls_all = loss_cls_all * mix_inds
+
         pos_inds = (labels > 0).nonzero().view(-1)
         neg_inds = (labels == 0).nonzero().view(-1)
 
@@ -126,6 +128,7 @@ class SSDHead(AnchorHead):
             bbox_pred,
             bbox_targets,
             bbox_weights,
+            mix_inds=mix_inds,
             beta=cfg.smoothl1_beta,
             avg_factor=num_total_samples)
         return loss_cls[None], loss_reg
@@ -136,8 +139,10 @@ class SSDHead(AnchorHead):
              gt_bboxes,
              gt_labels,
              img_metas,
+             mix_weight,
              cfg,
              gt_bboxes_ignore=None):
+        self.mix_weight = mix_weight
         featmap_sizes = [featmap.size()[-2:] for featmap in cls_scores]
         assert len(featmap_sizes) == len(self.anchor_generators)
 
@@ -155,11 +160,13 @@ class SSDHead(AnchorHead):
             gt_labels_list=gt_labels,
             label_channels=1,
             sampling=False,
-            unmap_outputs=False)
+            unmap_outputs=False,
+            mix_weight=mix_weight
+        )
         if cls_reg_targets is None:
             return None
         (labels_list, label_weights_list, bbox_targets_list, bbox_weights_list,
-         num_total_pos, num_total_neg) = cls_reg_targets
+         num_total_pos, num_total_neg, mix_inds_list) = cls_reg_targets
 
         num_images = len(img_metas)
         all_cls_scores = torch.cat([
@@ -177,7 +184,7 @@ class SSDHead(AnchorHead):
             num_images, -1, 4)
         all_bbox_weights = torch.cat(bbox_weights_list, -2).view(
             num_images, -1, 4)
-
+        mix_inds_list = torch.cat(mix_inds_list, -1).view(num_images, -1)
         losses_cls, losses_reg = multi_apply(
             self.loss_single,
             all_cls_scores,
@@ -186,6 +193,7 @@ class SSDHead(AnchorHead):
             all_label_weights,
             all_bbox_targets,
             all_bbox_weights,
+            mix_inds_list,
             num_total_samples=num_total_pos,
             cfg=cfg)
         return dict(loss_cls=losses_cls, loss_reg=losses_reg)

@@ -57,7 +57,9 @@ train_cfg = dict(
         allowed_border=0,
         pos_weight=-1,
         smoothl1_beta=1 / 9.0,
-        debug=False),
+        debug=False,
+        mixup=True
+    ),
     rcnn=dict(
         assigner=dict(
             type='MaxIoUAssigner',
@@ -72,7 +74,8 @@ train_cfg = dict(
             neg_pos_ub=-1,
             add_gt_as_proposals=True),
         pos_weight=-1,
-        debug=False))
+        debug=False
+    ))
 test_cfg = dict(
     rpn=dict(
         nms_across_levels=False,
@@ -110,7 +113,9 @@ data = dict(
             flip_ratio=0.5,
             with_mask=False,
             with_crowd=True,
-            with_label=True)),
+            with_label=True,
+            mix_up=dict(alpha=1.5)
+        )),
     val=dict(
         type=dataset_type,
         ann_file=data_root + 'VOC2007/ImageSets/Main/test.txt',

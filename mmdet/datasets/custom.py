@@ -9,11 +9,11 @@ from .transforms import (ImageTransform, BboxTransform, MaskTransform,
                          Numpy2Tensor)
 from .utils import to_tensor, random_scale
 from .extra_aug import ExtraAugmentation
+from .mixup import MixUp
 
 
 class CustomDataset(Dataset):
     """Custom dataset for detection.
-
     Annotation format:
     [
         {
@@ -29,7 +29,6 @@ class CustomDataset(Dataset):
         },
         ...
     ]
-
     The `ann` field is optional for testing.
     """
 
@@ -50,7 +49,9 @@ class CustomDataset(Dataset):
                  with_label=True,
                  extra_aug=None,
                  resize_keep_ratio=True,
-                 test_mode=False):
+                 test_mode=False,
+                 mix_up=None
+                 ):
         # prefix of images path
         self.img_prefix = img_prefix
 
@@ -107,6 +108,11 @@ class CustomDataset(Dataset):
         self.mask_transform = MaskTransform()
         self.numpy2tensor = Numpy2Tensor()
 
+        # if use mixup
+        if mix_up is not None:
+            self.mix_up = MixUp(**mix_up)
+        else:
+            self.mix_up = None
         # if use extra augmentation
         if extra_aug is not None:
             self.extra_aug = ExtraAugmentation(**extra_aug)
@@ -138,7 +144,6 @@ class CustomDataset(Dataset):
 
     def _set_group_flag(self):
         """Set flag according to image aspect ratio.
-
         Images with aspect ratio greater than 1 will be set as group 1,
         otherwise group 0.
         """
@@ -153,16 +158,17 @@ class CustomDataset(Dataset):
         return np.random.choice(pool)
 
     def __getitem__(self, idx):
+        index_len = len(self)
         if self.test_mode:
             return self.prepare_test_img(idx)
         while True:
-            data = self.prepare_train_img(idx)
+            data = self.prepare_train_img(index_len, idx)
             if data is None:
                 idx = self._rand_another(idx)
                 continue
             return data
 
-    def prepare_train_img(self, idx):
+    def prepare_train_img(self, index_len, idx):
         img_info = self.img_infos[idx]
         # load image
         img = mmcv.imread(osp.join(self.img_prefix, img_info['filename']))
@@ -193,6 +199,16 @@ class CustomDataset(Dataset):
         # skip the image if there is no valid gt bbox
         if len(gt_bboxes) == 0:
             return None
+
+        if self.mix_up is not None:
+            idx2 = np.random.choice(np.delete(np.arange(index_len), idx))
+            print(idx2)
+            img_info2 = self.img_infos[idx2]
+            img2 = mmcv.imread(osp.join(self.img_prefix, img_info2['filename']))
+            ann2 = self.get_ann_info(idx2)
+            box2 = ann2['bboxes']
+            labels2 = ann2['labels']
+            img, gt_bboxes, gt_labels, mix_weights = self.mix_up(img, img2, gt_bboxes, box2, gt_labels, labels2)
 
         # extra augmentation
         if self.extra_aug is not None:
@@ -240,6 +256,8 @@ class CustomDataset(Dataset):
             data['gt_bboxes_ignore'] = DC(to_tensor(gt_bboxes_ignore))
         if self.with_mask:
             data['gt_masks'] = DC(gt_masks, cpu_only=True)
+        if self.mix_up is not None:
+            data['mix_weight'] = DC(to_tensor(mix_weights))
         return data
 
     def prepare_test_img(self, idx):
