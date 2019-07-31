@@ -240,5 +240,5 @@ def attention_loss(x, y, beta):
     def at(x):
         return F.normalize(x.pow(2).mean(1).view(x.size(0), -1))
     def at_loss(x, y):
-        return (at(x) - at(y)).pow(2).sum()
+        return ((at(x) - at(y)).pow(2).sum())/x.size(0)
     return at_loss(x, y) * beta * 0.5,
