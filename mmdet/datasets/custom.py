@@ -202,7 +202,7 @@ class CustomDataset(Dataset):
 
         if self.mix_up is not None:
             idx2 = np.random.choice(np.delete(np.arange(index_len), idx))
-            print(idx2)
+            # print(idx2)
             img_info2 = self.img_infos[idx2]
             img2 = mmcv.imread(osp.join(self.img_prefix, img_info2['filename']))
             ann2 = self.get_ann_info(idx2)
