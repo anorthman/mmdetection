@@ -1,8 +1,8 @@
 # model settings
 model = dict(
     type='FasterRCNN',
-    # pretrained='modelzoo://resnet50_v1d',
-    pretrained=None,
+    pretrained='/home/zyh/abcd/save.pth',
+    # pretrained=None,
     backbone=dict(
         type='ResNet_v1d',
         depth=50,
