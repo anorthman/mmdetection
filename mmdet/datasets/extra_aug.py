@@ -93,11 +93,12 @@ class RandomCrop(object):
 
     def __init__(self,
                  min_ious=(0.1, 0.3, 0.5, 0.7, 0.9),
-                 min_crop_size=0.3):
+                 min_crop_size=0.3,
+		 keep_ratio=False):
         # 1: return ori img
         self.sample_mode = (1, *min_ious, 0)
         self.min_crop_size = min_crop_size
-
+        self.keep = keep_ratio	
     def __call__(self, img, boxes, labels):
         h, w, c = img.shape
         while True:
@@ -108,7 +109,10 @@ class RandomCrop(object):
             min_iou = mode
             for i in range(50):
                 new_w = random.uniform(self.min_crop_size * w, w)
-                new_h = random.uniform(self.min_crop_size * h, h)
+                if self.keep == True:
+                    new_h = new_w/w*h
+                else:
+                    new_h = random.uniform(self.min_crop_size * h, h)
 
                 # h / w in [0.5, 2]
                 if new_h / new_w < 0.5 or new_h / new_w > 2:

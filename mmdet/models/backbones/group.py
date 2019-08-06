@@ -13,7 +13,7 @@ from itertools import accumulate
 import torch
 
 # @BACKBONES.register_module        
-class BaseConv(nn.Module):
+class GroupConv(nn.Module):
     def __init__(self,
                  inplanes,
                  planes,
@@ -24,30 +24,62 @@ class BaseConv(nn.Module):
                  padding=1,
                  normalize=dict(type='BN'),
                  activate=nn.ReLU):
-        super(BaseConv, self).__init__()
+        super(GroupConv, self).__init__()
         self.stride = stride
         self.dilation = dilation
         self.kernel_size =kernel_size
         self.padding = padding
         self.group = group
-        self.conv1 = nn.Conv2d(inplanes, planes, kernel_size=self.kernel_size,stride=self.stride, 
+        self.half = int(inplanes/2) 
+       
+        if self.stride == 2:
+            self.conv1 = nn.Conv2d(inplanes, planes, kernel_size=self.kernel_size,stride=self.stride, 
                         padding=self.padding,groups=self.group,bias=False)
-        self.bn1 = nn.BatchNorm2d(planes)
+            self.bn1 = nn.BatchNorm2d(planes)
+        elif self.stride == 1:
+            self.conv1 = nn.Conv2d(self.half, self.half, kernel_size=self.kernel_size,stride=self.stride, 
+                        padding=self.padding,groups=self.group,bias=False)
+            self.bn1 = nn.BatchNorm2d(self.half)
+            if activate == nn.PReLU:
+                self.activate1 = activate(self.half)
+            else:	
+                self.activate1 = activate(inplace=True)
+        else:
+            raise ValueError
+        self.conv2 = nn.Conv2d(planes, planes, kernel_size=1,stride=1, 
+                        padding=0,bias=False)
+        self.bn2 = nn.BatchNorm2d(planes)
         if activate == nn.PReLU:
             self.activate = activate(planes)
         else:	
             self.activate = activate(inplace=True)
 
     def forward(self, x):
-
-        x = self.conv1(x)
-        x = self.bn1(x)
-        x = self.activate(x)
-
-        return x
+        if self.stride == 2:
+            x = self.conv1(x)
+            x = self.bn1(x)
+            x = self.activate(x)
+            x = self.conv2(x)
+            x = self.bn2(x)
+            x = self.activate(x)
+            return x
+        elif self.stride ==1: 
+            #left = x[:, :self.half, :, :] 
+            #right = x[:,self.half:,:,:]
+            right,left = torch.split(x,self.half,1)
+            x = self.conv1(left)
+            x = self.bn1(x)
+            x = self.activate1(x)
+            out = torch.cat((x, right),1)
+            out = self.conv2(out)
+            out = self.bn2(out)
+            out = self.activate(out)
+            return out
+        else:
+            raise ValueError
 
 @BACKBONES.register_module
-class Base(nn.Module):
+class Group(nn.Module):
     """Base backbone.
 
     Args: 
@@ -84,7 +116,7 @@ class Base(nn.Module):
                  out_indices=(0, 1, 2, 3),
                  style='pytorch',
                  normalize=dict(type='BN', frozen=False)):
-        super(Base, self).__init__()
+        super(Group, self).__init__()
         self.depth = depth
         self.num_stages = len(self.depth)
         assert num_stages > 0
@@ -124,10 +156,10 @@ class Base(nn.Module):
                 _in = _out
                 if j == 0 and self.strides[i] == 2: 
                     _out = _out * 2       
-                    _ops.append(BaseConv(_in, _out, kernel_size=self.kernel_size[k], group=self.group[k],
+                    _ops.append(GroupConv(_in, _out, kernel_size=self.kernel_size[k], group=self.group[k],
                             padding=int(self.kernel_size[k]/2), stride=2,activate=self.activate))
                 else:      
-                    _ops.append(BaseConv(_in, _in, kernel_size=self.kernel_size[k], group=self.group[k],
+                    _ops.append(GroupConv(_in, _in, kernel_size=self.kernel_size[k], group=self.group[k],
                             padding=int(self.kernel_size[k]/2), stride=1,activate=self.activate))
                 k += 1       
         assert len(_ops) == self.depth_num
