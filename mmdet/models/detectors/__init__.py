@@ -7,8 +7,10 @@ from .faster_rcnn import FasterRCNN
 from .mask_rcnn import MaskRCNN
 from .cascade_rcnn import CascadeRCNN
 from .retinanet import RetinaNet
+from .knowledge_distilling import KDSingleStageDetector, KDRetinaNet
 
 __all__ = [
     'BaseDetector', 'SingleStageDetector', 'TwoStageDetector', 'RPN',
-    'FastRCNN', 'FasterRCNN', 'MaskRCNN', 'CascadeRCNN', 'RetinaNet'
+    'FastRCNN', 'FasterRCNN', 'MaskRCNN', 'CascadeRCNN', 'RetinaNet',
+    'KDSingleStageDetector', 'KDRetinaNet'
 ]
