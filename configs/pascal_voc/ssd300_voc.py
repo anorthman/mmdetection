@@ -36,9 +36,7 @@ train_cfg = dict(
     allowed_border=-1,
     pos_weight=-1,
     neg_pos_ratio=3,
-    debug=False,
-    mixup=True
-)
+    debug=False)
 test_cfg = dict(
     nms=dict(type='nms', iou_thr=0.45),
     min_bbox_size=0,
@@ -47,14 +45,14 @@ test_cfg = dict(
 # model training and testing settings
 # dataset settings
 dataset_type = 'VOCDataset'
-data_root = 'data/VOCdevkit/'
+data_root = '/home/zyh/abc/VOCdevkit/'
 img_norm_cfg = dict(mean=[123.675, 116.28, 103.53], std=[1, 1, 1], to_rgb=True)
 data = dict(
-    imgs_per_gpu=1,
-    workers_per_gpu=1,
+    imgs_per_gpu=2,
+    workers_per_gpu=2,
     train=dict(
         type='RepeatDataset',
-        times=1,
+        times=3,
         dataset=dict(
             type=dataset_type,
             ann_file=[
@@ -70,8 +68,7 @@ data = dict(
             with_crowd=False,
             with_label=True,
             test_mode=False,
-            # mix_up=None,
-            mix_up=dict(alpha=1.5),
+            mixup=dict(alpha=1.5),
             extra_aug=dict(
                 photo_metric_distortion=dict(
                     brightness_delta=32,

@@ -181,7 +181,6 @@ class AnchorHead(nn.Module):
              img_metas,
              cfg,
              gt_bboxes_ignore=None,
-             mix_weight=None
              ):
         featmap_sizes = [featmap.size()[-2:] for featmap in cls_scores]
         assert len(featmap_sizes) == len(self.anchor_generators)
@@ -202,7 +201,6 @@ class AnchorHead(nn.Module):
             gt_labels_list=gt_labels,
             label_channels=label_channels,
             sampling=sampling,
-            mix_weight=mix_weight
         )
         if cls_reg_targets is None:
             return None

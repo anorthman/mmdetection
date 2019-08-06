@@ -14,7 +14,8 @@ def weighted_cross_entropy(pred, label, weight, mix_inds=None, avg_factor=None, 
     if avg_factor is None:
         avg_factor = max(torch.sum(weight > 0).float().item(), 1.)
     raw = F.cross_entropy(pred, label, reduction='none')
-    raw = raw * mix_inds
+    if mix_inds is not None:
+        raw = raw * mix_inds
     if reduce:
         return torch.sum(raw * weight)[None] / avg_factor
     else:

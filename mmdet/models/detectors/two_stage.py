@@ -85,8 +85,14 @@ class TwoStageDetector(BaseDetector, RPNTestMixin, BBoxTestMixin,
                       gt_bboxes_ignore=None,
                       gt_masks=None,
                       proposals=None,
-                      mix_weight=None
                       ):
+        mix_weight = []
+        for i in range(len(img_meta)):
+            if img_meta[i]['mix_weight'] is not None:
+                mix_weight.append(torch.tensor(img_meta[i]['mix_weight']).cuda())
+            else:
+                mix_weight = None
+
         x = self.extract_feat(img)
 
         losses = dict()
@@ -97,7 +103,7 @@ class TwoStageDetector(BaseDetector, RPNTestMixin, BBoxTestMixin,
             rpn_loss_inputs = rpn_outs + (gt_bboxes, img_meta,
                                           self.train_cfg.rpn)
             rpn_losses = self.rpn_head.loss(
-                *rpn_loss_inputs, gt_bboxes_ignore=gt_bboxes_ignore, mix_weight=mix_weight)
+                *rpn_loss_inputs, gt_bboxes_ignore=gt_bboxes_ignore)
             losses.update(rpn_losses)
 
             proposal_inputs = rpn_outs + (img_meta, self.test_cfg.rpn)

@@ -1,14 +1,22 @@
 # model settings
 model = dict(
     type='FasterRCNN',
-    pretrained='modelzoo://resnet50',
+    pretrained='/home/zyh/abc/trans/resnext101_32x4d.pth',
     backbone=dict(
-        type='ResNet',
-        depth=50,
+        type='ResNeXt',
+        depth=101,
+        groups=32,
+        base_width=4,
         num_stages=4,
         out_indices=(0, 1, 2, 3),
         frozen_stages=1,
-        style='pytorch'),
+        style='pytorch',
+        dcn=dict(
+            modulated=False,
+            groups=32,
+            deformable_groups=1,
+            fallback_on_stride=False),
+        stage_with_dcn=(False, True, True, True)),
     neck=dict(
         type='FPN',
         in_channels=[256, 512, 1024, 2048],
@@ -35,7 +43,7 @@ model = dict(
         in_channels=256,
         fc_out_channels=1024,
         roi_feat_size=7,
-        num_classes=21,
+        num_classes=81,
         target_means=[0., 0., 0., 0.],
         target_stds=[0.1, 0.1, 0.2, 0.2],
         reg_class_agnostic=False))
@@ -57,9 +65,7 @@ train_cfg = dict(
         allowed_border=0,
         pos_weight=-1,
         smoothl1_beta=1 / 9.0,
-        debug=False,
-        mixup=True
-    ),
+        debug=False),
     rcnn=dict(
         assigner=dict(
             type='MaxIoUAssigner',
@@ -74,8 +80,7 @@ train_cfg = dict(
             neg_pos_ub=-1,
             add_gt_as_proposals=True),
         pos_weight=-1,
-        debug=False
-    ))
+        debug=False))
 test_cfg = dict(
     rpn=dict(
         nms_across_levels=False,
@@ -114,7 +119,7 @@ data = dict(
             with_mask=False,
             with_crowd=True,
             with_label=True,
-            # mixup=dict(alpha=1.5)
+            mixup=dict(alpha=1.5)
         )),
     val=dict(
         type=dataset_type,
@@ -139,10 +144,15 @@ data = dict(
         with_label=False,
         test_mode=True))
 # optimizer
-optimizer = dict(type='SGD', lr=0.01, momentum=0.9, weight_decay=0.0001)
+optimizer = dict(type='SGD', lr=0.02, momentum=0.9, weight_decay=0.0001)
 optimizer_config = dict(grad_clip=dict(max_norm=35, norm_type=2))
 # learning policy
-lr_config = dict(policy='step', step=[3])  # actual epoch = 3 * 3 = 9
+lr_config = dict(
+    policy='step',
+    warmup='linear',
+    warmup_iters=500,
+    warmup_ratio=1.0 / 3,
+    step=[8, 11])
 checkpoint_config = dict(interval=1)
 # yapf:disable
 log_config = dict(
@@ -153,10 +163,10 @@ log_config = dict(
     ])
 # yapf:enable
 # runtime settings
-total_epochs = 4  # actual epoch = 4 * 3 = 12
+total_epochs = 12
 dist_params = dict(backend='nccl')
 log_level = 'INFO'
-work_dir = './work_dirs/faster_rcnn_r50_fpn_1x_voc0712'
+work_dir = './work_dirs/faster_rcnn_dconv_c3-c5_x101_32x4d_fpn_1x'
 load_from = None
 resume_from = None
 workflow = [('train', 1)]

@@ -96,11 +96,11 @@ data_root = '/home/zyh/abc/VOCdevkit/'
 img_norm_cfg = dict(
     mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
 data = dict(
-    imgs_per_gpu=1,
-    workers_per_gpu=1,
+    imgs_per_gpu=2,
+    workers_per_gpu=2,
     train=dict(
         type='RepeatDataset',  # to avoid reloading datasets frequently
-        times=1,
+        times=3,
         dataset=dict(
             type=dataset_type,
             ann_file=[
@@ -115,7 +115,7 @@ data = dict(
             with_mask=False,
             with_crowd=True,
             with_label=True,
-            mix_up=dict(alpha=1.5)
+            mixup=dict(alpha=1.5)
         )),
     val=dict(
         type=dataset_type,

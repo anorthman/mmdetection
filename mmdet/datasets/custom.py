@@ -50,7 +50,7 @@ class CustomDataset(Dataset):
                  extra_aug=None,
                  resize_keep_ratio=True,
                  test_mode=False,
-                 mix_up=None
+                 mixup=None
                  ):
         # prefix of images path
         self.img_prefix = img_prefix
@@ -109,8 +109,8 @@ class CustomDataset(Dataset):
         self.numpy2tensor = Numpy2Tensor()
 
         # if use mixup
-        if mix_up is not None:
-            self.mix_up = MixUp(**mix_up)
+        if mixup is not None:
+            self.mix_up = MixUp(**mixup)
         else:
             self.mix_up = None
         # if use extra augmentation
@@ -209,6 +209,8 @@ class CustomDataset(Dataset):
             box2 = ann2['bboxes']
             labels2 = ann2['labels']
             img, gt_bboxes, gt_labels, mix_weights = self.mix_up(img, img2, gt_bboxes, box2, gt_labels, labels2)
+        elif self.mix_up is None:
+            mix_weights = None
 
         # extra augmentation
         if self.extra_aug is not None:
@@ -242,7 +244,8 @@ class CustomDataset(Dataset):
             img_shape=img_shape,
             pad_shape=pad_shape,
             scale_factor=scale_factor,
-            flip=flip)
+            flip=flip,
+            mix_weight=mix_weights)
 
         data = dict(
             img=DC(to_tensor(img), stack=True),
@@ -256,8 +259,6 @@ class CustomDataset(Dataset):
             data['gt_bboxes_ignore'] = DC(to_tensor(gt_bboxes_ignore))
         if self.with_mask:
             data['gt_masks'] = DC(gt_masks, cpu_only=True)
-        if self.mix_up is not None:
-            data['mix_weight'] = DC(to_tensor(mix_weights))
         return data
 
     def prepare_test_img(self, idx):

@@ -16,7 +16,6 @@ def anchor_target(anchor_list,
                   label_channels=1,
                   sampling=True,
                   unmap_outputs=True,
-                  mix_weight=None
                   ):
     """Compute regression and classification targets for anchors.
 
@@ -64,10 +63,17 @@ def anchor_target(anchor_list,
          sampling=sampling,
          unmap_outputs=unmap_outputs)
     # mix weights
+    mix_weight = []
+    for i in range(len(img_metas)):
+        if img_metas[i]['mix_weight'] is not None:
+            mix_weight.append(torch.tensor(img_metas[i]['mix_weight']).cuda())
+        else:
+            mix_weight = None
+
     mix_weight_list = []
     for i in range(num_imgs):
         mix_tmp = torch.ones(len(all_label_weights[i]), dtype=torch.float32).cuda()
-        if cfg.mixup:
+        if mix_weight is not None:
             for j, ind in enumerate(pos_inds_list[i]):
                 mix_tmp[ind] = mix_weight[i][mix_inds_list[i][j]]
         mix_weight_list.append(mix_tmp)
