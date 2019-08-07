@@ -110,9 +110,9 @@ class CustomDataset(Dataset):
 
         # if use mixup
         if mixup is not None:
-            self.mix_up = MixUp(**mixup)
+            self.mixup = MixUp(**mixup)
         else:
-            self.mix_up = None
+            self.mixup = None
         # if use extra augmentation
         if extra_aug is not None:
             self.extra_aug = ExtraAugmentation(**extra_aug)
@@ -200,7 +200,7 @@ class CustomDataset(Dataset):
         if len(gt_bboxes) == 0:
             return None
 
-        if self.mix_up is not None:
+        if self.mixup is not None:
             idx2 = np.random.choice(np.delete(np.arange(index_len), idx))
             # print(idx2)
             img_info2 = self.img_infos[idx2]
@@ -208,8 +208,8 @@ class CustomDataset(Dataset):
             ann2 = self.get_ann_info(idx2)
             box2 = ann2['bboxes']
             labels2 = ann2['labels']
-            img, gt_bboxes, gt_labels, mix_weights = self.mix_up(img, img2, gt_bboxes, box2, gt_labels, labels2)
-        elif self.mix_up is None:
+            img, gt_bboxes, gt_labels, mix_weights = self.mixup(img, img2, gt_bboxes, box2, gt_labels, labels2)
+        elif self.mixup is None:
             mix_weights = None
 
         # extra augmentation

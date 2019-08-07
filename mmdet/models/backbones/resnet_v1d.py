@@ -360,7 +360,6 @@ class ResNet_v1d(nn.Module):
         # self.relu3 = nn.ReLU(inplace=True)
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
 
-
         self.res_layers = []
         for i, num_blocks in enumerate(self.stage_blocks):
             stride = strides[i]
