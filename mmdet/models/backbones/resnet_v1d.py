@@ -249,7 +249,7 @@ def make_res_layer(block,
                 inplanes,
                 planes * block.expansion,
                 kernel_size=1,
-                stride=stride,
+                stride=1,
                 bias=False),
             build_norm_layer(normalize, planes * block.expansion)[1],
         )
@@ -410,7 +410,6 @@ class ResNet_v1d(nn.Module):
         self.conv2 = nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1, bias=False)
         self.norm2_name, norm2 = build_norm_layer(self.normalize, 32, postfix=2)
         self.add_module(self.norm2_name, norm2)
-        # self.relu2 = nn.ReLU(inplace=True)
         self.conv3 = nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1, bias=False)
 
     def _freeze_stages(self):
