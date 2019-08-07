@@ -34,7 +34,7 @@ class MixUp(object):
         mix_labels = np.vstack((y1, y2))
 
         mix_box = np.concatenate([box1, box2], axis=0)
-        self.mix_weights = np.array(mix_labels[:, 1], dtype=np.float32)
+        mix_weights = np.array(mix_labels[:, 1], dtype=np.float32)
         mix_labels = np.array(mix_labels[:, 0], dtype=np.int)
 
-        return mix_img, mix_box, mix_labels, self.mix_weights
+        return mix_img, mix_box, mix_labels, mix_weights
