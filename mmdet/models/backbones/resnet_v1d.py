@@ -239,11 +239,12 @@ def make_res_layer(block,
                    style='pytorch',
                    with_cp=False,
                    normalize=dict(type='BN'),
-                   dcn=None):
+                   dcn=None,
+                   avgpool=1):
     downsample = None
     if stride != 1 or inplanes != planes * block.expansion:
         downsample = nn.Sequential(
-            nn.AvgPool2d(kernel_size=1, padding=0, stride=1),
+            nn.AvgPool2d(kernel_size=avgpool, padding=0, stride=avgpool, ceil_mode=True),
             nn.Conv2d(
                 inplanes,
                 planes * block.expansion,
@@ -313,6 +314,7 @@ class ResNet_v1d(nn.Module):
         101: (Bottleneck, (3, 4, 23, 3)),
         152: (Bottleneck, (3, 8, 36, 3))
     }
+    avgpool = [1, 2, 2, 2]
 
     def __init__(self,
                  depth,
@@ -376,7 +378,8 @@ class ResNet_v1d(nn.Module):
                 style=self.style,
                 with_cp=with_cp,
                 normalize=normalize,
-                dcn=dcn)
+                dcn=dcn,
+                avgpool=self.avgpool[i])
             self.inplanes = planes * self.block.expansion
             layer_name = 'layer{}'.format(i + 1)
             self.add_module(layer_name, res_layer)
