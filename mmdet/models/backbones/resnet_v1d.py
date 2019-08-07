@@ -412,7 +412,7 @@ class ResNet_v1d(nn.Module):
 
     def _freeze_stages(self):
         if self.frozen_stages >= 0:
-            for m in [self.conv1, self.norm1, self.conv2, self.norm2, self.conv3]:
+            for m in [self.conv1, self.norm1, self.conv2, self.norm2, self.conv3, self.norm3]:
                 for param in m.parameters():
                     param.requires_grad = False
 
