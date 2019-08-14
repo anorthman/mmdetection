@@ -55,27 +55,28 @@ class BaseDetector(nn.Module):
             logger = logging.getLogger()
             logger.info('load model from: {}'.format(pretrained))
 
-    def forward_test(self, imgs, img_metas, **kwargs):
-        for var, name in [(imgs, 'imgs'), (img_metas, 'img_metas')]:
-            if not isinstance(var, list):
-                raise TypeError('{} must be a list, but got {}'.format(
-                    name, type(var)))
+    def forward_test(self, imgs, img_metas=None, **kwargs):
+        #for var, name in [(imgs, 'imgs'), (img_metas, 'img_metas')]:
+        #    if not isinstance(var, list):
+        #        raise TypeError('{} must be a list, but got {}'.format(
+        #            name, type(var)))
 
-        num_augs = len(imgs)
-        if num_augs != len(img_metas):
-            raise ValueError(
-                'num of augmentations ({}) != num of image meta ({})'.format(
-                    len(imgs), len(img_metas)))
-        # TODO: remove the restriction of imgs_per_gpu == 1 when prepared
-        imgs_per_gpu = imgs[0].size(0)
-        assert imgs_per_gpu == 1
+        #num_augs = len(imgs)
+        #if num_augs != len(img_metas):
+        #    raise ValueError(
+        #        'num of augmentations ({}) != num of image meta ({})'.format(
+        #            len(imgs), len(img_metas)))
+        ## TODO: remove the restriction of imgs_per_gpu == 1 when prepared
+        #imgs_per_gpu = imgs[0].size(0)
+        #assert imgs_per_gpu == 1
 
-        if num_augs == 1:
-            return self.simple_test(imgs[0], img_metas[0], **kwargs)
+        #if num_augs == 1:
+        if True:
+            return self.simple_test(imgs, **kwargs)
         else:
             return self.aug_test(imgs, img_metas, **kwargs)
 
-    def forward(self, img, img_meta, return_loss=True, **kwargs):
+    def forward(self, img, img_meta=None, return_loss=False, **kwargs):
         if return_loss:
             return self.forward_train(img, img_meta, **kwargs)
         else:

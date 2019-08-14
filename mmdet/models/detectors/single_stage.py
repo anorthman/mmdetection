@@ -55,9 +55,10 @@ class SingleStageDetector(BaseDetector):
             *loss_inputs, gt_bboxes_ignore=gt_bboxes_ignore)
         return losses
 
-    def simple_test(self, img, img_meta, rescale=False):
+    def simple_test(self, img, img_meta=None, rescale=False):
         x = self.extract_feat(img)
         outs = self.bbox_head(x)
+        return outs
         bbox_inputs = outs + (img_meta, self.test_cfg, rescale)
         bbox_list = self.bbox_head.get_bboxes(*bbox_inputs)
         bbox_results = [
