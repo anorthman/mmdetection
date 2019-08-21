@@ -13,9 +13,8 @@ import torch
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Train a detector')
-    parser.add_argument('--config', help='train config file path',
-                        default='/home/zyh/abcd/mmdetection/configs/pascal_voc/faster_rcnn_r50_fpn_1x_voc0712_v1d.py')
-    parser.add_argument('--work_dir', help='the dir to save logs and models', default='./weights')
+    parser.add_argument('config', help='train config file path')
+    parser.add_argument('--work_dir', help='the dir to save logs and models')
     parser.add_argument(
         '--resume_from', help='the checkpoint file to resume from')
     parser.add_argument(
