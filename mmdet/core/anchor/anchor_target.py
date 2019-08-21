@@ -15,7 +15,8 @@ def anchor_target(anchor_list,
                   gt_labels_list=None,
                   label_channels=1,
                   sampling=True,
-                  unmap_outputs=True):
+                  unmap_outputs=True,
+                  ):
     """Compute regression and classification targets for anchors.
 
     Args:
@@ -47,7 +48,7 @@ def anchor_target(anchor_list,
     if gt_labels_list is None:
         gt_labels_list = [None for _ in range(num_imgs)]
     (all_labels, all_label_weights, all_bbox_targets, all_bbox_weights,
-     pos_inds_list, neg_inds_list) = multi_apply(
+     pos_inds_list, neg_inds_list, mix_inds_list) = multi_apply(
          anchor_target_single,
          anchor_list,
          valid_flag_list,
@@ -61,6 +62,22 @@ def anchor_target(anchor_list,
          label_channels=label_channels,
          sampling=sampling,
          unmap_outputs=unmap_outputs)
+    # mix weights
+    mix_weight = []
+    for i in range(len(img_metas)):
+        if img_metas[i]['mix_weight'] is not None:
+            mix_weight.append(torch.tensor(img_metas[i]['mix_weight']).cuda())
+        else:
+            mix_weight = None
+
+    mix_weight_list = []
+    for i in range(num_imgs):
+        mix_tmp = torch.ones(len(all_label_weights[i]), dtype=torch.float32).cuda()
+        if mix_weight is not None:
+            for j, ind in enumerate(pos_inds_list[i]):
+                mix_tmp[ind] = mix_weight[i][mix_inds_list[i][j]]
+        mix_weight_list.append(mix_tmp)
+
     # no valid anchors
     if any([labels is None for labels in all_labels]):
         return None
@@ -72,8 +89,9 @@ def anchor_target(anchor_list,
     label_weights_list = images_to_levels(all_label_weights, num_level_anchors)
     bbox_targets_list = images_to_levels(all_bbox_targets, num_level_anchors)
     bbox_weights_list = images_to_levels(all_bbox_weights, num_level_anchors)
+    mix_weights_list = images_to_levels(mix_weight_list, num_level_anchors)
     return (labels_list, label_weights_list, bbox_targets_list,
-            bbox_weights_list, num_total_pos, num_total_neg)
+            bbox_weights_list, num_total_pos, num_total_neg, mix_weights_list)
 
 
 def images_to_levels(target, num_level_anchors):
@@ -159,7 +177,7 @@ def anchor_target_single(flat_anchors,
         bbox_weights = unmap(bbox_weights, num_total_anchors, inside_flags)
 
     return (labels, label_weights, bbox_targets, bbox_weights, pos_inds,
-            neg_inds)
+            neg_inds, sampling_result.pos_assigned_gt_inds)
 
 
 def expand_binary_labels(labels, label_weights, label_channels):

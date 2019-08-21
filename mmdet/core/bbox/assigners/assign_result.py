@@ -3,11 +3,13 @@ import torch
 
 class AssignResult(object):
 
-    def __init__(self, num_gts, gt_inds, max_overlaps, labels=None):
+    def __init__(self, num_gts, gt_inds, max_overlaps, mix_ind=None, labels=None):
         self.num_gts = num_gts
         self.gt_inds = gt_inds
         self.max_overlaps = max_overlaps
         self.labels = labels
+        self.mix_ind = mix_ind
+
 
     def add_gt_(self, gt_labels):
         self_inds = torch.arange(
