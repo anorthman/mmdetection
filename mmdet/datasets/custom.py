@@ -209,13 +209,13 @@ class CustomDataset(Dataset):
             box2 = ann2['bboxes']
             labels2 = ann2['labels']
             img, gt_bboxes, gt_labels, mix_weights = self.mixup(img, img2, gt_bboxes, box2, gt_labels, labels2)
+            # extra augmentation
+            img, gt_bboxes, gt_labels, mix_weights = self.extra_aug(img, gt_bboxes, gt_labels, mix_weights)
+
         elif self.mixup is None:
             mix_weights = None
-
-        # extra augmentation
-        if self.extra_aug is not None:
-            img, gt_bboxes, gt_labels = self.extra_aug(img, gt_bboxes,
-                                                       gt_labels)
+            # extra augmentation
+            img, gt_bboxes, gt_labels, mix_weights = self.extra_aug(img, gt_bboxes, gt_labels, mix_weights)
 
         # apply transforms
         flip = True if np.random.rand() < self.flip_ratio else False
