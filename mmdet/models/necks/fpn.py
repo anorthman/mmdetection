@@ -43,6 +43,7 @@ class FPN(nn.Module):
 
         self.lateral_convs = nn.ModuleList()
         self.fpn_convs = nn.ModuleList()
+        #self.upsample = nn.(scale_factor=2,mode='nearest')
 
         for i in range(self.start_level, self.backbone_end_level):
             l_conv = ConvModule(
@@ -106,10 +107,12 @@ class FPN(nn.Module):
 
         # build top-down path
         used_backbone_levels = len(laterals)
+        #for i in range(used_backbone_levels - 1, 0, -1):
+        #    laterals[i - 1] += F.interpolate(
+        #        laterals[i], scale_factor=2, mode='nearest')
         for i in range(used_backbone_levels - 1, 0, -1):
-            laterals[i - 1] += F.interpolate(
-                laterals[i], scale_factor=2, mode='nearest')
-
+            tmp =  F.interpolate(laterals[i], scale_factor=2, mode='nearest')
+            laterals[i - 1] = laterals[i-1] + tmp
         # build outputs
         # part 1: from original levels
         outs = [
