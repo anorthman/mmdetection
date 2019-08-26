@@ -19,6 +19,7 @@ class FPN(nn.Module):
                  normalize=None,
                  activation=None,
                  kernel_size=3,
+                 nnie=False,
                  padding=1):
         super(FPN, self).__init__()
         assert isinstance(in_channels, list)
@@ -43,7 +44,9 @@ class FPN(nn.Module):
 
         self.lateral_convs = nn.ModuleList()
         self.fpn_convs = nn.ModuleList()
-        #self.upsample = nn.(scale_factor=2,mode='nearest')
+        self.nnie = nnie
+        if self.nnie == True:
+            self.upsample = nn.ConvTranspose2d(self.out_channels,self.out_channels,2,stride=2,groups=int(self.out_channels/16))
 
         for i in range(self.start_level, self.backbone_end_level):
             l_conv = ConvModule(
@@ -107,12 +110,15 @@ class FPN(nn.Module):
 
         # build top-down path
         used_backbone_levels = len(laterals)
-        #for i in range(used_backbone_levels - 1, 0, -1):
-        #    laterals[i - 1] += F.interpolate(
-        #        laterals[i], scale_factor=2, mode='nearest')
         for i in range(used_backbone_levels - 1, 0, -1):
-            tmp =  F.interpolate(laterals[i], scale_factor=2, mode='nearest')
-            laterals[i - 1] = laterals[i-1] + tmp
+            if self.nnie:
+                tmp = self.upsample(laterals[i])
+                laterals[i - 1] = laterals[i - 1] + tmp # self.upsample(
+                #    laterals[i])
+            else:
+                laterals[i - 1] += F.interpolate(
+                    laterals[i], scale_factor=2, mode='nearest')
+
         # build outputs
         # part 1: from original levels
         outs = [

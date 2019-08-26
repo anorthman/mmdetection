@@ -144,13 +144,15 @@ def _conv2d(raw,input, weight, bias=None, stride=1, padding=0, dilation=1, group
     return x
 
 def _conv_transpose2d(raw,input, weight, bias=None, stride=1, padding=0, output_padding=0, groups=1, dilation=1):
+    print("groups",groups)
+    print("weights",weight.shape)
     x=raw(input, weight, bias, stride, padding, output_padding, groups, dilation)
     name=log.add_layer(name='conv_transpose')
     log.add_blobs([x],name='conv_transpose_blob')
     layer=caffe_net.Layer_param(name=name, type='Deconvolution',
                                 bottom=[log.get_blobs(input)], top=[log.get_blobs(x)])
     layer.conv_param(x.size()[1],weight.size()[2:],stride=_pair(stride),
-                     pad=_pair(padding),dilation=_pair(dilation),bias_term=bias is not None)
+                     pad=_pair(padding),dilation=_pair(dilation),bias_term=bias is not None,groups=groups)
     if bias is not None:
         layer.add_data(weight.cpu().data.numpy(),bias.cpu().data.numpy())
     else:
@@ -456,7 +458,7 @@ F_supported=[
     'instance_norm',
     'softmax',
     'conv_transpose2d',
-    'interpolate',  # TODO, interpolate function cannot transfer correctly now
+#    'interpolate',  # TODO, interpolate function cannot transfer correctly now
 
 ]
 
