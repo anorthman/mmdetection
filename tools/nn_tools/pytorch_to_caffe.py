@@ -189,7 +189,7 @@ def _interpolate(raw,input, size=None, scale_factor=None, mode='nearest', align_
     stride=scale_factor
     pad=0#int(np.ceil((scale_factor-1)/2))
     channels=x.size(1)
-    weight=bilinear_weight([channels,1,kernel_size,kernel_size])
+    weight=bilinear_weight([channels,int(channels/16),kernel_size,kernel_size])
     layer.conv_param(channels,kernel_size,stride=stride,pad=pad,bias_term=False,groups=channels)
     layer.add_data(weight)
     log.cnet.add_layer(layer)
@@ -458,7 +458,7 @@ F_supported=[
     'instance_norm',
     'softmax',
     'conv_transpose2d',
-#    'interpolate',  # TODO, interpolate function cannot transfer correctly now
+    'interpolate',  # TODO, interpolate function cannot transfer correctly now
 
 ]
 
