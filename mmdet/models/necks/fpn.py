@@ -116,8 +116,10 @@ class FPN(nn.Module):
                 laterals[i - 1] = laterals[i - 1] + tmp # self.upsample(
                 #    laterals[i])
             else:
-                laterals[i - 1] += F.interpolate(
-                    laterals[i], scale_factor=2, mode='nearest')
+                tmp = F.interpolate(laterals[i], scale_factor=2, mode='nearest')  
+                laterals[i - 1] += tmp 
+                #laterals[i - 1] += F.interpolate(
+                #    laterals[i], scale_factor=2, mode='nearest')
 
         # build outputs
         # part 1: from original levels
