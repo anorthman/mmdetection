@@ -37,10 +37,10 @@ class Layer_param():
             raise TypeError('the layer type must be InnerProduct if you want set fc param')
         fc_param = pb.InnerProductParameter()
         fc_param.num_output = num_output
-        fc_param.weight_filler.type = weight_filler
+        #fc_param.weight_filler.type = weight_filler
         fc_param.bias_term = has_bias
-        if has_bias:
-            fc_param.bias_filler.type = bias_filler
+        #if has_bias:
+        #    fc_param.bias_filler.type = bias_filler
         self.param.inner_product_param.CopyFrom(fc_param)
 
     def conv_param(self, num_output, kernel_size, stride=(1), pad=(0,),
@@ -64,9 +64,9 @@ class Layer_param():
         conv_param.stride.extend(pair_reduce(stride))
         conv_param.pad.extend(pair_reduce(pad))
         conv_param.bias_term=bias_term
-        conv_param.weight_filler.type=weight_filler_type
-        if bias_term:
-            conv_param.bias_filler.type = bias_filler_type
+        #conv_param.weight_filler.type=weight_filler_type
+        #if bias_term:
+        #    conv_param.bias_filler.type = bias_filler_type
         if dilation:
             conv_param.dilation.extend(pair_reduce(dilation))
         if groups:

@@ -175,7 +175,10 @@ def _interpolate(raw,input, size=None, scale_factor=None, mode='nearest', align_
                                 bottom=[log.get_blobs(input)], top=[log.get_blobs(x)])
 
     def bilinear_weight(shape):
-        weight = np.ones(shape, dtype='float32')
+        weight = np.zeros(shape, dtype='float32')
+        for i in range(shape[0]):
+            tmp = i%16
+            weight[i,tmp,:,:] = 1
         #weight = np.zeros(np.prod(shape), dtype='float32')
         #f = np.ceil(shape[3] / 2.)
         #c = (2 * f - 1 - f % 2) / (2. * f)
@@ -189,8 +192,8 @@ def _interpolate(raw,input, size=None, scale_factor=None, mode='nearest', align_
     stride=scale_factor
     pad=0#int(np.ceil((scale_factor-1)/2))
     channels=x.size(1)
-    weight=bilinear_weight([channels,int(channels/16),kernel_size,kernel_size])
-    layer.conv_param(channels,kernel_size,stride=stride,pad=pad,bias_term=False,groups=channels)
+    weight=bilinear_weight([channels,16,kernel_size,kernel_size])
+    layer.conv_param(channels,kernel_size,stride=stride,pad=pad,bias_term=False,groups=int(channels/16))
     layer.add_data(weight)
     log.cnet.add_layer(layer)
     return x

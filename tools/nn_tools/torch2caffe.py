@@ -80,7 +80,7 @@ def main():
    #     model = MMDataParallel(model, device_ids=[0])
 
 
-    name='cpu_cropface_v3'
+    name='resnet50_kd_576_v4'
     model.eval()
     #input = dict()
     input=Variable(torch.ones([1,3,256,256]))
