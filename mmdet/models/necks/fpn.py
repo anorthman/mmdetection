@@ -117,7 +117,7 @@ class FPN(nn.Module):
                 #    laterals[i])
             else:
                 tmp = F.interpolate(laterals[i], scale_factor=2, mode='nearest')  
-                laterals[i - 1] += tmp 
+                laterals[i - 1] = laterals[i - 1] + tmp 
                 #laterals[i - 1] += F.interpolate(
                 #    laterals[i], scale_factor=2, mode='nearest')
 
