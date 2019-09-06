@@ -5,12 +5,13 @@ from .anchor_heads import *  # noqa: F401,F403
 from .bbox_heads import *  # noqa: F401,F403
 from .mask_heads import *  # noqa: F401,F403
 from .detectors import *  # noqa: F401,F403
-from .registry import BACKBONES, NECKS, ROI_EXTRACTORS, HEADS, DETECTORS
+from .classifiers import *
+from .registry import BACKBONES, NECKS, ROI_EXTRACTORS, HEADS, DETECTORS, CLASSIFIERS
 from .builder import (build_backbone, build_neck, build_roi_extractor,
-                      build_head, build_detector)
+                      build_head, build_detector, build_classifier)
 
 __all__ = [
     'BACKBONES', 'NECKS', 'ROI_EXTRACTORS', 'HEADS', 'DETECTORS',
     'build_backbone', 'build_neck', 'build_roi_extractor', 'build_head',
-    'build_detector'
+    'build_detector', 'build_classifier'
 ]
