@@ -1,9 +1,10 @@
 # model settings
 model = dict(
     type='FasterRCNN',
-    pretrained='modelzoo://resnet50',
+    pretrained='/home/zyh/abcd/resnet50_v1d.pth',
+    # pretrained=None,
     backbone=dict(
-        type='ResNet',
+        type='ResNet_v1d',
         depth=50,
         num_stages=4,
         out_indices=(0, 1, 2, 3),
@@ -57,8 +58,7 @@ train_cfg = dict(
         allowed_border=0,
         pos_weight=-1,
         smoothl1_beta=1 / 9.0,
-        debug=False,
-        mixup=True
+        debug=False
     ),
     rcnn=dict(
         assigner=dict(
@@ -91,7 +91,7 @@ test_cfg = dict(
 )
 # dataset settings
 dataset_type = 'VOCDataset'
-data_root = '/home/zyh/abc/VOCdevkit/'
+data_root = 'data/VOCdevkit/'
 img_norm_cfg = dict(
     mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
 data = dict(
@@ -114,7 +114,7 @@ data = dict(
             with_mask=False,
             with_crowd=True,
             with_label=True,
-            # mixup=dict(alpha=1.5)
+            mixup=dict(alpha=1.5)
         )),
     val=dict(
         type=dataset_type,
@@ -142,7 +142,12 @@ data = dict(
 optimizer = dict(type='SGD', lr=0.01, momentum=0.9, weight_decay=0.0001)
 optimizer_config = dict(grad_clip=dict(max_norm=35, norm_type=2))
 # learning policy
-lr_config = dict(policy='step', step=[3])  # actual epoch = 3 * 3 = 9
+lr_config = dict(
+    policy='step',
+    warmup='linear',
+    warmup_iters=500,
+    warmup_ratio=1.0 / 3,
+    step=[5, 6])
 checkpoint_config = dict(interval=1)
 # yapf:disable
 log_config = dict(
@@ -156,7 +161,7 @@ log_config = dict(
 total_epochs = 4  # actual epoch = 4 * 3 = 12
 dist_params = dict(backend='nccl')
 log_level = 'INFO'
-work_dir = './work_dirs/faster_rcnn_r50_fpn_1x_voc0712'
+work_dir = './work_dirs/faster_rcnn_r50_fpn_1x_voc0712_v1d'
 load_from = None
 resume_from = None
 workflow = [('train', 1)]

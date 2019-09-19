@@ -45,14 +45,14 @@ test_cfg = dict(
 # model training and testing settings
 # dataset settings
 dataset_type = 'VOCDataset'
-data_root = 'data/VOCdevkit/'
+data_root = '/home/zyh/abc/VOCdevkit/'
 img_norm_cfg = dict(mean=[123.675, 116.28, 103.53], std=[1, 1, 1], to_rgb=True)
 data = dict(
-    imgs_per_gpu=4,
+    imgs_per_gpu=2,
     workers_per_gpu=2,
     train=dict(
         type='RepeatDataset',
-        times=10,
+        times=3,
         dataset=dict(
             type=dataset_type,
             ann_file=[
@@ -68,6 +68,7 @@ data = dict(
             with_crowd=False,
             with_label=True,
             test_mode=False,
+            mixup=dict(alpha=1.5),
             extra_aug=dict(
                 photo_metric_distortion=dict(
                     brightness_delta=32,
@@ -79,7 +80,8 @@ data = dict(
                     to_rgb=img_norm_cfg['to_rgb'],
                     ratio_range=(1, 4)),
                 random_crop=dict(
-                    min_ious=(0.1, 0.3, 0.5, 0.7, 0.9), min_crop_size=0.3)),
+                    min_ious=(0.1, 0.3, 0.5, 0.7, 0.9), min_crop_size=0.3)
+            ),
             resize_keep_ratio=False)),
     val=dict(
         type=dataset_type,
@@ -118,7 +120,7 @@ lr_config = dict(
 checkpoint_config = dict(interval=1)
 # yapf:disable
 log_config = dict(
-    interval=50,
+    interval=1,
     hooks=[
         dict(type='TextLoggerHook'),
         # dict(type='TensorboardLoggerHook')
