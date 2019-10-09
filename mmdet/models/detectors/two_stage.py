@@ -84,7 +84,15 @@ class TwoStageDetector(BaseDetector, RPNTestMixin, BBoxTestMixin,
                       gt_labels,
                       gt_bboxes_ignore=None,
                       gt_masks=None,
-                      proposals=None):
+                      proposals=None,
+                      ):
+        mix_weight = []
+        for i in range(len(img_meta)):
+            if img_meta[i]['mix_weight'] is not None:
+                mix_weight.append(torch.tensor(img_meta[i]['mix_weight']).cuda())
+            else:
+                mix_weight = None
+
         x = self.extract_feat(img)
 
         losses = dict()
@@ -134,8 +142,18 @@ class TwoStageDetector(BaseDetector, RPNTestMixin, BBoxTestMixin,
 
             bbox_targets = self.bbox_head.get_target(
                 sampling_results, gt_bboxes, gt_labels, self.train_cfg.rcnn)
+            if mix_weight is not None:
+                mix_inds = []
+                for i in range(len(sampling_results)):
+                    mix_ind = torch.ones(sampling_results[i].bboxes.shape[0]).cuda()
+                    for j in range(len(sampling_results[i].pos_assigned_gt_inds)):
+                        mix_ind[j] = mix_weight[i][sampling_results[i].pos_assigned_gt_inds[j]]
+                    mix_inds.append(mix_ind)
+                mix_inds = torch.cat(mix_inds, 0)
+            else:
+                mix_inds = None
             loss_bbox = self.bbox_head.loss(cls_score, bbox_pred,
-                                            *bbox_targets)
+                                            *bbox_targets, mix_inds)
             losses.update(loss_bbox)
 
         # mask head forward and loss

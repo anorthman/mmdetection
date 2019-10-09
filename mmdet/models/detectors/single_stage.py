@@ -1,4 +1,5 @@
 import torch.nn as nn
+import torch
 
 from .base import BaseDetector
 from .. import builder
@@ -48,6 +49,14 @@ class SingleStageDetector(BaseDetector):
                       gt_bboxes,
                       gt_labels,
                       gt_bboxes_ignore=None):
+
+        mix_weight = []
+        for i in range(len(img_metas)):
+            if img_metas[i]['mix_weight'] is not None:
+                mix_weight.append(torch.tensor(img_metas[i]['mix_weight']).cuda())
+            else:
+                mix_weight = None
+
         x = self.extract_feat(img)
         outs = self.bbox_head(x)
         loss_inputs = outs + (gt_bboxes, gt_labels, img_metas, self.train_cfg)

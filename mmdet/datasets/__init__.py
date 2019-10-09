@@ -7,6 +7,8 @@ from .utils import to_tensor, random_scale, show_ann, get_dataset
 from .concat_dataset import ConcatDataset
 from .repeat_dataset import RepeatDataset
 from .extra_aug import ExtraAugmentation
+from .classify import CustomClassifyDataset
+from .classify import get_dataset as get_classify_dataset
 
 __all__ = [
     'CustomDataset', 'XMLDataset', 'CocoDataset', 'VOCDataset', 'GroupSampler',
