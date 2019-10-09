@@ -10,22 +10,24 @@ def weighted_nll_loss(pred, label, weight, avg_factor=None):
     return torch.sum(raw * weight)[None] / avg_factor
 
 
-def weighted_cross_entropy(pred, label, weight, avg_factor=None, reduce=True):
+def weighted_cross_entropy(pred, label, weight, mix_inds=None, avg_factor=None, reduce=True):
     if avg_factor is None:
         avg_factor = max(torch.sum(weight > 0).float().item(), 1.)
     raw = F.cross_entropy(pred, label, reduction='none')
+    if mix_inds is not None:
+        raw = raw * mix_inds
     if reduce:
         return torch.sum(raw * weight)[None] / avg_factor
     else:
         return raw * weight / avg_factor
 
 
-def weighted_binary_cross_entropy(pred, label, weight, avg_factor=None):
+def weighted_binary_cross_entropy(pred, label, weight, mix_inds=None, avg_factor=None):
     if avg_factor is None:
         avg_factor = max(torch.sum(weight > 0).float().item(), 1.)
-    return F.binary_cross_entropy_with_logits(
-        pred, label.float(), weight.float(),
-        reduction='sum')[None] / avg_factor
+    loss = F.binary_cross_entropy_with_logits(pred, label.float(), weight.float(), reduction='none')[None]
+    loss = loss * mix_inds
+    return loss.sum() / avg_factor
 
 
 def sigmoid_focal_loss(pred,
@@ -168,12 +170,19 @@ def mask_cross_entropy(pred, target, label):
         pred_slice, target, reduction='mean')[None]
 
 
-def smooth_l1_loss(pred, target, beta=1.0, reduction='mean'):
+def smooth_l1_loss(pred, target, beta=1.0, mix_weight=None, reduction='mean'):
     assert beta > 0
     assert pred.size() == target.size() and target.numel() > 0
     diff = torch.abs(pred - target)
     loss = torch.where(diff < beta, 0.5 * diff * diff / beta,
                        diff - 0.5 * beta)
+    if mix_weight is not None:
+        s = loss.shape
+        if len(s) == 1:
+            mix_weight = torch.reshape(mix_weight, shape=loss.shape)
+        else:
+            mix_weight = torch.reshape(mix_weight, shape=[s[0], -1])
+        loss = loss * mix_weight
     reduction_enum = F._Reduction.get_enum(reduction)
     # none: 0, mean:1, sum: 2
     if reduction_enum == 0:
@@ -184,10 +193,10 @@ def smooth_l1_loss(pred, target, beta=1.0, reduction='mean'):
         return loss.sum()
 
 
-def weighted_smoothl1(pred, target, weight, beta=1.0, avg_factor=None):
+def weighted_smoothl1(pred, target, weight, mix_inds=None, beta=1.0, avg_factor=None):
     if avg_factor is None:
         avg_factor = torch.sum(weight > 0).float().item() / 4 + 1e-6
-    loss = smooth_l1_loss(pred, target, beta, reduction='none')
+    loss = smooth_l1_loss(pred, target, beta, mix_inds, reduction='none')
     return torch.sum(loss * weight)[None] / avg_factor
 
 

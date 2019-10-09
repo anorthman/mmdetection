@@ -1,7 +1,7 @@
 import mmcv
 from torch import nn
 
-from .registry import BACKBONES, NECKS, ROI_EXTRACTORS, HEADS, DETECTORS
+from .registry import BACKBONES, NECKS, ROI_EXTRACTORS, HEADS, DETECTORS, CLASSIFIERS
 
 
 def _build_module(cfg, registry, default_args):
@@ -49,3 +49,7 @@ def build_head(cfg):
 
 def build_detector(cfg, train_cfg=None, test_cfg=None):
     return build(cfg, DETECTORS, dict(train_cfg=train_cfg, test_cfg=test_cfg))
+
+
+def build_classifier(cfg, train_cfg=None, test_cfg=None):
+    return build(cfg, CLASSIFIERS, dict(train_cfg=train_cfg, test_cfg=test_cfg))

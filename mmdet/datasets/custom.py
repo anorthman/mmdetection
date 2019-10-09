@@ -9,11 +9,11 @@ from .transforms import (ImageTransform, BboxTransform, MaskTransform,
                          Numpy2Tensor)
 from .utils import to_tensor, random_scale
 from .extra_aug import ExtraAugmentation
+from .mixup import MixUp
 
 
 class CustomDataset(Dataset):
     """Custom dataset for detection.
-
     Annotation format:
     [
         {
@@ -29,7 +29,6 @@ class CustomDataset(Dataset):
         },
         ...
     ]
-
     The `ann` field is optional for testing.
     """
 
@@ -50,7 +49,9 @@ class CustomDataset(Dataset):
                  with_label=True,
                  extra_aug=None,
                  resize_keep_ratio=True,
-                 test_mode=False):
+                 test_mode=False,
+                 mixup=None
+                 ):
         # prefix of images path
         self.img_prefix = img_prefix
 
@@ -71,6 +72,12 @@ class CustomDataset(Dataset):
         self.img_scales = img_scale if isinstance(img_scale,
                                                   list) else [img_scale]
         assert mmcv.is_list_of(self.img_scales, tuple)
+        # gray or color 
+        if img_norm_cfg.get('gray') == None:
+            self.gray = False
+        else:
+            self.gray = img_norm_cfg.pop('gray')
+
         # normalization configs
         self.img_norm_cfg = img_norm_cfg
 
@@ -107,6 +114,11 @@ class CustomDataset(Dataset):
         self.mask_transform = MaskTransform()
         self.numpy2tensor = Numpy2Tensor()
 
+        # if use mixup
+        if mixup is not None:
+            self.mixup = MixUp(**mixup)
+        else:
+            self.mixup = None
         # if use extra augmentation
         if extra_aug is not None:
             self.extra_aug = ExtraAugmentation(**extra_aug)
@@ -138,7 +150,6 @@ class CustomDataset(Dataset):
 
     def _set_group_flag(self):
         """Set flag according to image aspect ratio.
-
         Images with aspect ratio greater than 1 will be set as group 1,
         otherwise group 0.
         """
@@ -153,19 +164,25 @@ class CustomDataset(Dataset):
         return np.random.choice(pool)
 
     def __getitem__(self, idx):
+        index_len = len(self)
         if self.test_mode:
             return self.prepare_test_img(idx)
         while True:
-            data = self.prepare_train_img(idx)
+            data = self.prepare_train_img(index_len, idx)
             if data is None:
                 idx = self._rand_another(idx)
                 continue
             return data
 
-    def prepare_train_img(self, idx):
+    def prepare_train_img(self, index_len, idx):
         img_info = self.img_infos[idx]
         # load image
-        img = mmcv.imread(osp.join(self.img_prefix, img_info['filename']))
+        if self.gray:
+            img = mmcv.imread(osp.join(self.img_prefix, img_info['filename']),'grayscale')
+            img = img[:,:,np.newaxis]
+        else:
+            img = mmcv.imread(osp.join(self.img_prefix, img_info['filename']))
+
         # load proposals if necessary
         if self.proposals is not None:
             proposals = self.proposals[idx][:self.num_max_proposals]
@@ -194,10 +211,24 @@ class CustomDataset(Dataset):
         if len(gt_bboxes) == 0:
             return None
 
-        # extra augmentation
-        if self.extra_aug is not None:
-            img, gt_bboxes, gt_labels = self.extra_aug(img, gt_bboxes,
-                                                       gt_labels)
+        if self.mixup is not None:
+            idx2 = np.random.choice(np.delete(np.arange(index_len), idx))
+            # print(idx2)
+            img_info2 = self.img_infos[idx2]
+            img2 = mmcv.imread(osp.join(self.img_prefix, img_info2['filename']))
+            ann2 = self.get_ann_info(idx2)
+            box2 = ann2['bboxes']
+            labels2 = ann2['labels']
+            img, gt_bboxes, gt_labels, mix_weights = self.mixup(img, img2, gt_bboxes, box2, gt_labels, labels2)
+            # extra augmentation
+            if self.extra_aug is not None:
+                img, gt_bboxes, gt_labels, mix_weights = self.extra_aug(img, gt_bboxes, gt_labels, mix_weights)
+
+        elif self.mixup is None:
+            mix_weights = None
+            # extra augmentation
+            if self.extra_aug is not None:
+                img, gt_bboxes, gt_labels, mix_weights = self.extra_aug(img, gt_bboxes, gt_labels, mix_weights)
 
         # apply transforms
         flip = True if np.random.rand() < self.flip_ratio else False
@@ -226,7 +257,8 @@ class CustomDataset(Dataset):
             img_shape=img_shape,
             pad_shape=pad_shape,
             scale_factor=scale_factor,
-            flip=flip)
+            flip=flip,
+            mix_weight=mix_weights)
 
         data = dict(
             img=DC(to_tensor(img), stack=True),

@@ -87,17 +87,19 @@ class BBoxHead(nn.Module):
              label_weights,
              bbox_targets,
              bbox_weights,
+             mix_inds=None,
              reduce=True):
         losses = dict()
         if cls_score is not None:
             losses['loss_cls'] = weighted_cross_entropy(
-                cls_score, labels, label_weights, reduce=reduce)
+                cls_score, labels, label_weights, mix_inds=mix_inds, reduce=reduce)
             losses['acc'] = accuracy(cls_score, labels)
         if bbox_pred is not None:
             losses['loss_reg'] = weighted_smoothl1(
                 bbox_pred,
                 bbox_targets,
                 bbox_weights,
+                mix_inds=mix_inds,
                 avg_factor=bbox_targets.size(0))
         return losses
 
