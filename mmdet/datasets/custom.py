@@ -72,6 +72,12 @@ class CustomDataset(Dataset):
         self.img_scales = img_scale if isinstance(img_scale,
                                                   list) else [img_scale]
         assert mmcv.is_list_of(self.img_scales, tuple)
+        # gray or color 
+        if img_norm_cfg.get('gray') == None:
+            self.gray = False
+        else:
+            self.gray = img_norm_cfg.pop('gray')
+
         # normalization configs
         self.img_norm_cfg = img_norm_cfg
 
@@ -171,7 +177,12 @@ class CustomDataset(Dataset):
     def prepare_train_img(self, index_len, idx):
         img_info = self.img_infos[idx]
         # load image
-        img = mmcv.imread(osp.join(self.img_prefix, img_info['filename']))
+        if self.gray:
+            img = mmcv.imread(osp.join(self.img_prefix, img_info['filename']),'grayscale')
+            img = img[:,:,np.newaxis]
+        else:
+            img = mmcv.imread(osp.join(self.img_prefix, img_info['filename']))
+
         # load proposals if necessary
         if self.proposals is not None:
             proposals = self.proposals[idx][:self.num_max_proposals]

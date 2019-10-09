@@ -33,6 +33,8 @@ class ImageTransform(object):
                 img, scale, return_scale=True)
             scale_factor = np.array([w_scale, h_scale, w_scale, h_scale],
                                     dtype=np.float32)
+        if len(img.shape) == 2:
+            img = img[:,:,np.newaxis]
         img_shape = img.shape
         img = mmcv.imnormalize(img, self.mean, self.std, self.to_rgb)
         if flip:
