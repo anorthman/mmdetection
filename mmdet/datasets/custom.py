@@ -215,7 +215,11 @@ class CustomDataset(Dataset):
             idx2 = np.random.choice(np.delete(np.arange(index_len), idx))
             # print(idx2)
             img_info2 = self.img_infos[idx2]
-            img2 = mmcv.imread(osp.join(self.img_prefix, img_info2['filename']))
+            if self.gray:
+                img2 = mmcv.imread(osp.join(self.img_prefix, img_info['filename']),'grayscale')
+                img2 = img2[:,:,np.newaxis]
+            else:
+                img2 = mmcv.imread(osp.join(self.img_prefix, img_info['filename']))
             ann2 = self.get_ann_info(idx2)
             box2 = ann2['bboxes']
             labels2 = ann2['labels']
@@ -277,7 +281,11 @@ class CustomDataset(Dataset):
     def prepare_test_img(self, idx):
         """Prepare an image for testing (multi-scale and flipping)"""
         img_info = self.img_infos[idx]
-        img = mmcv.imread(osp.join(self.img_prefix, img_info['filename']))
+        if self.gray:
+            img = mmcv.imread(osp.join(self.img_prefix, img_info['filename']),'grayscale')
+            img = img[:,:,np.newaxis]
+        else:
+            img = mmcv.imread(osp.join(self.img_prefix, img_info['filename']))
         if self.proposals is not None:
             proposal = self.proposals[idx][:self.num_max_proposals]
             if not (proposal.shape[1] == 4 or proposal.shape[1] == 5):
