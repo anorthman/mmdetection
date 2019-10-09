@@ -20,7 +20,7 @@ class MixUp(object):
 
         height = max(img1.shape[0], img2.shape[0])
         width = max(img1.shape[1], img2.shape[1])
-        mix_img = np.zeros(shape=(height, width, 3), dtype='float32')
+        mix_img = np.zeros(shape=(height, width, img1.shape[2]), dtype='float32')
 
         mix_img[:img1.shape[0], :img1.shape[1], :] = img1.astype('float32') * lambd
         mix_img[:img2.shape[0], :img2.shape[1], :] += img2.astype('float32') * (1. - lambd)
