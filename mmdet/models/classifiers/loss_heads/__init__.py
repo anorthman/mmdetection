@@ -1,3 +1,3 @@
 from .multilabels_head import MultilabelsHead
-
-__all__ = ['MultilabelsHead']
+from .softmax_head import SoftmaxHead
+__all__ = ['MultilabelsHead', 'SoftmaxHead']

@@ -14,12 +14,14 @@ class ImageNetDataset(Dataset):
 
     def __init__(self,
                  data_root,
-                 test_mode=False):
+                 test_mode=False,**kwargs):
         self.classes = list(range(1000))
-        normalize = T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+        normalize = T.Normalize(mean=[0.456], std=[1.0])
+        #normalize = T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
         if not test_mode:
             traindir = os.path.join(data_root, 'train')
             self.dataset = ImageFolder(traindir, T.Compose([
+                               T.Grayscale(num_output_channels=1),
                                T.RandomResizedCrop(224, scale=(0.8, 1.0)),
                                T.RandomHorizontalFlip(),
                                T.ToTensor(),
